@@ -1,8 +1,12 @@
 package yangyd.algo.ch12
 
 import yangyd.algo.datastructure.BinaryTreeNode
+
+import static yangyd.algo.ch12.BinaryTrees.*
+
 /**
- * for simplicity, assume root is always not null
+ * This class contains operations on a Binary Search Tree.
+ * for simplicity, assuming the parameter {@code root} for each method is always not null
  */
 class BinarySearchTrees {
   static <T extends Comparable<T>> Optional<BinaryTreeNode<T>> search(BinaryTreeNode<T> root, T target) {
@@ -24,9 +28,14 @@ class BinarySearchTrees {
     return Optional.empty()
   }
 
-  static <T> List<T> collect(BinaryTreeNode<T> root) {
+  /**
+   * Collect elements in the BST in ascending order
+   * @param root
+   * @return list of elements in the BST in ascending order
+   */
+  static <T> List<T> collectSorted(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    BinaryTrees.inOrderWalk(root, {
+    inOrderWalk(root, {
       node, depth -> list.add(node.key)
     })
     Collections.unmodifiableList(list)
@@ -105,22 +114,83 @@ class BinarySearchTrees {
 
     if (parent != null) {
       if (left) {
-        BinaryTreeNode.newLeftChild(parent, key)
+        newLeftChild(parent, key)
       } else {
-        BinaryTreeNode.newRightChild(parent, key)
+        newRightChild(parent, key)
       }
     } else {
       throw new AssertionError("root should not be null")
     }
   }
 
+  /**
+   * delete the given key from the BST. Return the new root after deletion. The new root is different than the old root <i>i.i.f.</i> the old root is deleted,
+   * and is nothing if deleted root is the only node in the tree.
+   * @param root
+   * @param key
+   * @return the new root, may be nothing
+   */
+  static <T extends Comparable<T>> Optional<BinaryTreeNode<T>> delete(BinaryTreeNode<T> root, T key) {
+    final toDelete = findNode(root, key)
+
+    if (toDelete.left == null) {
+      return replaceNode(root, toDelete, toDelete.right)
+    } else if (toDelete.right == null) {
+      return replaceNode(root, toDelete, toDelete.left)
+    } else {
+      deleteWithTwoChildren(root, toDelete)
+    }
+  }
+
+  /**
+   * the deletion when the node has both left and right children.
+   * basically we search the right sub-tree of {@code toDelete}, find a node which has no left child,
+   * and use that node as the replacement of {@code toDelete}.
+   *
+   * For detailed explanation, see Section 12.3
+   */
+  private static <T extends Comparable<T>> Optional<BinaryTreeNode<T>> deleteWithTwoChildren(BinaryTreeNode<T> root,
+                                                                                             BinaryTreeNode<T> toDelete)
+  {
+    final rightSubRoot = toDelete.right
+    final leftSubRoot = toDelete.left
+
+    if (rightSubRoot.left == null) {
+      rightSubRoot.left = leftSubRoot // move left sub tree down to the empty slot of rightSubRoot
+      leftSubRoot.parent = rightSubRoot
+      toDelete.left = null
+      return replaceNode(root, toDelete, rightSubRoot)
+    }
+
+    // the successor of toDelete is actually one of the nodes we want as replacement (exercise 12.2-5)
+    final succ = successor(toDelete, toDelete.key)
+    if (!succ.present) {
+      throw new AssertionError("impossible")
+    }
+
+    // this is the replacement of toDelete
+    final elected = findNode(toDelete, succ.get()) // this time could be saved if successor() return the node, instead of its key
+
+    // now detach the elected replacement from the tree, replace it with its right sub-tree
+    replaceNode(root, elected, elected.right)
+
+    // detach leftSubRoot and put it at the empty left slot of the elected replacement
+    elected.left = leftSubRoot
+    leftSubRoot.parent = elected
+    toDelete.left = null
+
+    // finally, delete the toDelete node and replace it with elected replacement
+    return replaceNode(root, toDelete, elected)
+  }
+
+
   private static <T> BinaryTreeNode<T> findNode(BinaryTreeNode<T> root, T key) {
     final nodeOption = search(root, key)
-    if (!nodeOption.present) {
-      throw new NoSuchElementException("key must be present in the tree")
+    if (nodeOption.present) {
+      return nodeOption.get()
+    } else {
+      throw new NoSuchElementException("key $key doesn't exist in the tree")
     }
-    final node = nodeOption.get()
-    node
   }
 
 }

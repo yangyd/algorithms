@@ -1,7 +1,7 @@
 package yangyd.algo.fixture
 
 import yangyd.algo.datastructure.BinaryTreeNode
-import static yangyd.algo.datastructure.BinaryTreeNode.*
+import static yangyd.algo.ch12.BinaryTrees.*
 
 class Trees {
   static final sample_bst = figure_12_2()

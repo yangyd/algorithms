@@ -5,7 +5,7 @@ import yangyd.algo.fixture.Trees
 
 class BinaryTreesSpec extends Specification {
 
-  def "in-order tree walk access BST elements in ascending order"() {
+  def "in-order tree walk access elements from left to right"() {
     when:
     def list = new LinkedList<Integer>()
     BinaryTrees.inOrderWalk(Trees.sample_bst, {

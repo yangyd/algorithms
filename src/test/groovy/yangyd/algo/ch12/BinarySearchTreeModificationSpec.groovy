@@ -14,7 +14,7 @@ class BinarySearchTreeModificationSpec extends Specification {
     BinarySearchTrees.insert(base, 5)
     BinarySearchTrees.insert(base, 18)
     then:
-    BinarySearchTrees.collect(base) == [5, 12, 18]
+    BinarySearchTrees.collectSorted(base) == [5, 12, 18]
   }
 
   def "insert 2,9,15,19"() {
@@ -24,7 +24,7 @@ class BinarySearchTreeModificationSpec extends Specification {
     BinarySearchTrees.insert(base, 15)
     BinarySearchTrees.insert(base, 19)
     then:
-    BinarySearchTrees.collect(base) == [2,5,9,12,15,18,19]
+    BinarySearchTrees.collectSorted(base) == [2, 5, 9, 12, 15, 18, 19]
   }
 
   def "insert 17,13"() {
@@ -33,7 +33,7 @@ class BinarySearchTreeModificationSpec extends Specification {
     BinarySearchTrees.insert(base, 13)
 
     then:
-    BinarySearchTrees.collect(base) == [2,5,9,12,13,15,17,18,19]
+    BinarySearchTrees.collectSorted(base) == [2, 5, 9, 12, 13, 15, 17, 18, 19]
   }
 
   def "check the shape of BST"() {
@@ -50,6 +50,14 @@ class BinarySearchTreeModificationSpec extends Specification {
     then:
     pre == [12,5,2,9,18,15,13,17,19]
     post == [2,9,5,13,17,15,19,18,12]
+  }
+
+  def "delete 2,13"() {
+    when:
+    def noop = null
+
+    then:
+    BinarySearchTrees.collectSorted(base) == [5, 9, 12, 15, 17, 18, 19]
   }
 
 }
