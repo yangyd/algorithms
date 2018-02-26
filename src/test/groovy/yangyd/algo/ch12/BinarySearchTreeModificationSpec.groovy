@@ -52,12 +52,28 @@ class BinarySearchTreeModificationSpec extends Specification {
     post == [2,9,5,13,17,15,19,18,12]
   }
 
-  def "delete 2,13"() {
+  def "delete 13 (leaf)"() {
     when:
-    def noop = null
-
+    def baseOption = BinarySearchTrees.delete(base, 13)
     then:
-    BinarySearchTrees.collectSorted(base) == [5, 9, 12, 15, 17, 18, 19]
+    baseOption.present
+    BinarySearchTrees.collectSorted((base = baseOption.get())) == [2, 5, 9, 12, 15, 17, 18, 19]
   }
 
+  def "delete 15 (single child)"() {
+    when:
+    def baseOption = BinarySearchTrees.delete(base, 15)
+    then:
+    baseOption.present
+    BinarySearchTrees.collectSorted((base = baseOption.get())) == [2, 5, 9, 12, 17, 18, 19]
+  }
+
+  def "delete 12 (two children, root node)"() {
+    when:
+    def baseOption = BinarySearchTrees.delete(base, 12)
+    then:
+    baseOption.present
+    (base = baseOption.get()).key == 17
+    BinarySearchTrees.collectSorted(base) == [2, 5, 9, 17, 18, 19]
+  }
 }

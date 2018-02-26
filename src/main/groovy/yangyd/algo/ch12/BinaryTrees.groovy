@@ -49,7 +49,8 @@ class BinaryTrees {
    * the {@code replacement} can be null, in which case the node {@code toDelete} is simply removed.
    * </p>
    * <p>
-   *   if {@code toDelete} is {@code root}, its child pointers will be set to null after this method, otherwise, it is just detached from the tree.
+   *   if {@code toDelete} is {@code root}, its child pointers will be set to null after this method. Note that in this case old sub-tree may be lost.
+   *   Otherwise, it is just detached from the tree.
    * </p>
    * @param root the root of the binary tree. may not be null.
    * @param toDelete the node to delete. may not be null, may be same as {@code root}

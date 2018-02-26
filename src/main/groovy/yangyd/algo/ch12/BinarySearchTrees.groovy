@@ -155,6 +155,7 @@ class BinarySearchTrees {
     final rightSubRoot = toDelete.right
     final leftSubRoot = toDelete.left
 
+    // simple case: rightSubRoot doesn't has left child
     if (rightSubRoot.left == null) {
       rightSubRoot.left = leftSubRoot // move left sub tree down to the empty slot of rightSubRoot
       leftSubRoot.parent = rightSubRoot
@@ -162,22 +163,24 @@ class BinarySearchTrees {
       return replaceNode(root, toDelete, rightSubRoot)
     }
 
-    // the successor of toDelete is actually one of the nodes we want as replacement (exercise 12.2-5)
-    final succ = successor(toDelete, toDelete.key)
-    if (!succ.present) {
-      throw new AssertionError("impossible")
+    // an obvious candidate is the successor of toDelete (exercise 12.2-5)
+    // we could have called successor() here, if it wasn't returning the key instead of the node
+    def elected = rightSubRoot
+    while (elected.left != null) {
+      elected = elected.left
     }
 
-    // this is the replacement of toDelete
-    final elected = findNode(toDelete, succ.get()) // this time could be saved if successor() return the node, instead of its key
-
     // now detach the elected replacement from the tree, replace it with its right sub-tree
-    replaceNode(root, elected, elected.right)
+    replaceNode(root, elected, elected.right) // root will not change here
 
-    // detach leftSubRoot and put it at the empty left slot of the elected replacement
+    // now the elected node is clean of children.
+    // make it the parent of original leftSubRoot and rightSubRoot
     elected.left = leftSubRoot
     leftSubRoot.parent = elected
     toDelete.left = null
+    elected.right = rightSubRoot
+    rightSubRoot.parent = elected
+    toDelete.right = null
 
     // finally, delete the toDelete node and replace it with elected replacement
     return replaceNode(root, toDelete, elected)
