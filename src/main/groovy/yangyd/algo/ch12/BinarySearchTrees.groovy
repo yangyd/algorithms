@@ -34,11 +34,7 @@ class BinarySearchTrees {
    * @return list of elements in the BST in ascending order
    */
   static <T> List<T> collectSorted(BinaryTreeNode<T> root) {
-    def list = new LinkedList<T>()
-    inOrderWalk(root, {
-      node, depth -> list.add(node.key)
-    })
-    Collections.unmodifiableList(list)
+    collectInOrder(root)
   }
 
   static <T> T maximum(BinaryTreeNode<T> root) {
@@ -114,9 +110,9 @@ class BinarySearchTrees {
 
     if (parent != null) {
       if (left) {
-        newLeftChild(parent, key)
+        parent.newLeftChild(key)
       } else {
-        newRightChild(parent, key)
+        parent.newRightChild(key)
       }
     } else {
       throw new AssertionError("root should not be null")

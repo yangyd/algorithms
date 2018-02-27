@@ -11,45 +11,65 @@ import java.util.function.BiConsumer
 class BinaryTrees {
 
   /**
-   * Create a new left child to {@code parent} with the given key. Will fail if the {@code parent} already has left child.
-   * @param parent
-   * @param childKey
-   * @return newly created left child node.
+   * Right rotation operations on a binary tree. (Figure 13.2)
+   * @param subRoot the sub-tree root on which the rotation is performed
+   * @return the new node in the place previously held by subRoot. Its parent is set to the same parent of subRoot before the rotation.
    */
-  static <T> BinaryTreeNode<T> newLeftChild(BinaryTreeNode parent, T childKey) {
-    if (parent == null || parent.left != null) {
-      throw new IllegalArgumentException("bad parent or child already exists")
+  static <T> BinaryTreeNode<T> rightRotate(BinaryTreeNode<T> subRoot) {
+    if (subRoot == null || subRoot.left == null) {
+      throw new IllegalArgumentException("subRoot and its left child must not be null")
     }
-    def child = new BinaryTreeNode<T>(childKey)
-    child.parent = parent
-    parent.left = child
-    child
+    def y = subRoot
+    def x = subRoot.left
+    def b = x.right
+
+    x.parent = y.parent
+    y.parent = x
+    x.right = y
+
+    y.left = b
+    if (b != null) {
+      b.parent = y
+    }
+
+    return x
   }
 
+
   /**
-   * Create a new right child to {@code parent} with the given key. Will fail if the {@code parent} already has right child.
-   * @param parent
-   * @param childKey
-   * @return newly created right child node.
+   * Left rotation operations on a binary tree. (Figure 13.2)
+   * @param subRoot the sub-tree root on which the rotation is performed
+   * @return the new node in the place previously held by subRoot. Its parent is set to the same parent of subRoot before the rotation.
    */
-  static <T> BinaryTreeNode<T> newRightChild(BinaryTreeNode parent, T childKey) {
-    if (parent == null || parent.right != null) {
-      throw new IllegalArgumentException("bad parent or child already exists")
+  static <T> BinaryTreeNode<T> leftRotate(BinaryTreeNode<T> subRoot) {
+    if (subRoot == null || subRoot.right == null) {
+      throw new IllegalArgumentException("subRoot and its right child must not be null")
     }
-    def child = new BinaryTreeNode<T>(childKey)
-    child.parent = parent
-    parent.right = child
-    child
+    def x = subRoot
+    def y = subRoot.right
+    def b = y.left
+
+    y.parent = x.parent
+    x.parent = y
+    y.left = x
+
+    x.right = b
+    if (b != null) {
+      b.parent = x
+    }
+
+    return  y
   }
 
 
   /**
    * <p>
-   * in the Binary tree rooted at {@code root}, remove the node {@code toDelete}, then put the subtree rooted at {@code replacement} in its place.
-   * the {@code replacement} can be null, in which case the node {@code toDelete} is simply removed.
+   *   in the Binary tree rooted at {@code root}, remove the node {@code toDelete}, then put the subtree rooted at {@code replacement} in its place.
+   *   the {@code replacement} can be null, in which case the node {@code toDelete} is simply removed.
+   *   Note that the subtree of toDelete is removed as well, it will not be transplanted to the replacement node.
    * </p>
    * <p>
-   *   if {@code toDelete} is {@code root}, its child pointers will be set to null after this method. Note that in this case old sub-tree may be lost.
+   *   if {@code toDelete} is {@code root}, its child pointers will be set to null after this method.
    *   Otherwise, it is just detached from the tree.
    * </p>
    * @param root the root of the binary tree. may not be null.
@@ -112,6 +132,24 @@ class BinaryTrees {
       }
     })
     return counter.get()
+  }
+
+  static <T> List<T> collectInOrder(BinaryTreeNode<T> root) {
+    def list = new LinkedList<T>()
+    inOrderWalk(root, { node, depth -> list.add(node.key) })
+    Collections.unmodifiableList(list)
+  }
+
+  static <T> List<T> collectPreOrder(BinaryTreeNode<T> root) {
+    def list = new LinkedList<T>()
+    preOrderWalk(root, { node, depth -> list.add(node.key) })
+    Collections.unmodifiableList(list)
+  }
+
+  static <T> List<T> collectPostOrder(BinaryTreeNode<T> root) {
+    def list = new LinkedList<T>()
+    postOrderWalk(root, { node, depth -> list.add(node.key) })
+    Collections.unmodifiableList(list)
   }
 
   static <T> void inOrderWalk(BinaryTreeNode<T> root,
