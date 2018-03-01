@@ -5,6 +5,7 @@ class BinaryTreeNode<T> {
   BinaryTreeNode<T> parent
   BinaryTreeNode<T> left
   BinaryTreeNode<T> right
+  RedBlack color
 
   BinaryTreeNode(T key) {
     this.key = key
@@ -16,7 +17,7 @@ class BinaryTreeNode<T> {
    * @return newly created left child node.
    */
   BinaryTreeNode<T> newLeftChild(T childKey) {
-    if (this.left != null) {
+    if (this.left != null && this.left.key != null) { // only allow override of RB tree sentinel node
       throw new IllegalStateException("left child already exists")
     }
     def child = new BinaryTreeNode<T>(childKey)
@@ -31,7 +32,7 @@ class BinaryTreeNode<T> {
    * @return newly created right child node.
    */
   BinaryTreeNode<T> newRightChild(T childKey) {
-    if (this.right != null) {
+    if (this.right != null && this.right.key != null) { // only allow override of RB tree sentinel node
       throw new IllegalStateException("right child already exists")
     }
     def child = new BinaryTreeNode<T>(childKey)
@@ -42,8 +43,6 @@ class BinaryTreeNode<T> {
 
   @Override
   String toString() {
-    return "BinaryTreeNode{" +
-        "key='" + key + '\'' +
-        '}'
+    "Node[$key]" + (color == null ? "" : "($color)")
   }
 }

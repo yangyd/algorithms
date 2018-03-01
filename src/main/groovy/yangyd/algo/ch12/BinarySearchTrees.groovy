@@ -89,11 +89,11 @@ class BinarySearchTrees {
     }
   }
 
-  static <T extends Comparable<T>> void insert(BinaryTreeNode<T> root, T key) {
+  static <T extends Comparable<T>> BinaryTreeNode<T> insert(BinaryTreeNode<T> root, T key) {
     def node = root
     def parent = null
     def left = false
-    while (node != null) {
+    while (node != null && node.key != null) { // don't be confused by the Red-Black tree sentinel node, which has null key
       def c = key <=> node.key
       if (c > 0) {
         parent = node
@@ -108,11 +108,11 @@ class BinarySearchTrees {
       }
     }
 
-    if (parent != null) {
+    if (parent != null && parent.key != null) {
       if (left) {
-        parent.newLeftChild(key)
+        return parent.newLeftChild(key)
       } else {
-        parent.newRightChild(key)
+        return parent.newRightChild(key)
       }
     } else {
       throw new AssertionError("root should not be null")

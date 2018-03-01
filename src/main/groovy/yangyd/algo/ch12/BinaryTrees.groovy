@@ -11,6 +11,24 @@ import java.util.function.BiConsumer
 class BinaryTrees {
 
   /**
+   * find the sibling of a node in an binary tree
+   * @param node
+   * @return
+   */
+  static <T> Optional<BinaryTreeNode<T>> sibling(BinaryTreeNode<T> node) {
+    if (node == null || node.parent == null) {
+      return Optional.empty()
+    }
+    if (node.parent.left == node) {
+      return Optional.ofNullable(node.parent.right)
+    } else if (node.parent.right == node) {
+      return Optional.ofNullable(node.parent.left)
+    } else {
+      return Optional.empty()
+    }
+  }
+
+  /**
    * Right rotation operations on a binary tree. (Figure 13.2)
    * @param subRoot the sub-tree root on which the rotation is performed
    * @return the new node in the place previously held by subRoot. Its parent is set to the same parent of subRoot before the rotation.
@@ -19,11 +37,11 @@ class BinaryTrees {
     if (subRoot == null || subRoot.left == null) {
       throw new IllegalArgumentException("subRoot and its left child must not be null")
     }
-    def y = subRoot
-    def x = subRoot.left
-    def b = x.right
+    final parent = subRoot.parent
+    final y = subRoot
+    final x = subRoot.left
+    final b = x.right
 
-    x.parent = y.parent
     y.parent = x
     x.right = y
 
@@ -32,6 +50,7 @@ class BinaryTrees {
       b.parent = y
     }
 
+    fixRotate(parent, y, x)
     return x
   }
 
@@ -45,11 +64,11 @@ class BinaryTrees {
     if (subRoot == null || subRoot.right == null) {
       throw new IllegalArgumentException("subRoot and its right child must not be null")
     }
-    def x = subRoot
-    def y = subRoot.right
-    def b = y.left
+    final parent = subRoot.parent
+    final x = subRoot
+    final y = subRoot.right
+    final b = y.left
 
-    y.parent = x.parent
     x.parent = y
     y.left = x
 
@@ -58,9 +77,20 @@ class BinaryTrees {
       b.parent = x
     }
 
+    fixRotate(parent, x, y)
     return  y
   }
 
+  private static void fixRotate(BinaryTreeNode<?> parent, BinaryTreeNode<?> subRoot, BinaryTreeNode<?> newSubRoot) {
+    newSubRoot.parent = parent
+    if (parent != null) {
+      if (parent.left == subRoot) {
+        parent.left = newSubRoot
+      } else if (parent.right == subRoot) {
+        parent.right = newSubRoot
+      }
+    }
+  }
 
   /**
    * <p>
@@ -127,7 +157,7 @@ class BinaryTrees {
   static int depth(BinaryTreeNode<?> root) {
     final counter = new AtomicInteger(0)
     postOrderWalk(root, { n, d ->
-      if (d > counter.get()) {
+      if (n != null && n.key != null && d > counter.get()) { // don't count RB tree sentinel
         counter.set(d)
       }
     })
@@ -136,36 +166,48 @@ class BinaryTrees {
 
   static <T> List<T> collectInOrder(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    inOrderWalk(root, { node, depth -> list.add(node.key) })
+    inOrderWalk(root, { node, depth -> if (node.key != null) list.add(node.key) })
     Collections.unmodifiableList(list)
   }
 
   static <T> List<T> collectPreOrder(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    preOrderWalk(root, { node, depth -> list.add(node.key) })
+    preOrderWalk(root, { node, depth -> if (node.key != null) list.add(node.key) })
     Collections.unmodifiableList(list)
   }
 
   static <T> List<T> collectPostOrder(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    postOrderWalk(root, { node, depth -> list.add(node.key) })
+    postOrderWalk(root, { node, depth -> if (node.key != null) list.add(node.key) })
     Collections.unmodifiableList(list)
   }
 
   static <T> void inOrderWalk(BinaryTreeNode<T> root,
                                 BiConsumer<BinaryTreeNode<T>, Integer> visitor) {
-    inW(root, 1, visitor) // root node at depth 1
+    try {
+      inW(root, 1, visitor) // root node at depth 1
+    } catch (StopWalkException e) {
+      // this is fine
+    }
   }
 
 
   static <T> void preOrderWalk(BinaryTreeNode<T> root,
                                 BiConsumer<BinaryTreeNode<T>, Integer> visitor) {
-    preW(root, 1, visitor)
+    try {
+      preW(root, 1, visitor)
+    } catch (StopWalkException e) {
+      // this is fine
+    }
   }
 
   static <T> void postOrderWalk(BinaryTreeNode<T> root,
                                 BiConsumer<BinaryTreeNode<T>, Integer> visitor) {
-    postW(root, 1, visitor)
+    try {
+      postW(root, 1, visitor)
+    } catch (StopWalkException e) {
+      // this is fine
+    }
   }
 
   private static <T> void inW(BinaryTreeNode<T> node,
@@ -196,5 +238,8 @@ class BinaryTrees {
       postW(node.right, depth + 1, visitor)
       visitor.accept(node, depth)
     }
+  }
+
+  static class StopWalkException extends RuntimeException {
   }
 }
