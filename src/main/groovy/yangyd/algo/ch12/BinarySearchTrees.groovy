@@ -129,9 +129,9 @@ class BinarySearchTrees {
   static <T extends Comparable<T>> Optional<BinaryTreeNode<T>> delete(BinaryTreeNode<T> root, T key) {
     final toDelete = findNode(root, key)
 
-    if (toDelete.left == null) {
+    if (nil(toDelete.left)) {
       return replaceNode(root, toDelete, toDelete.right)
-    } else if (toDelete.right == null) {
+    } else if (nil(toDelete.right)) {
       return replaceNode(root, toDelete, toDelete.left)
     } else {
       deleteWithTwoChildren(root, toDelete)
@@ -152,7 +152,7 @@ class BinarySearchTrees {
     final leftSubRoot = toDelete.left
 
     // simple case: rightSubRoot doesn't has left child
-    if (rightSubRoot.left == null) {
+    if (nil(rightSubRoot.left)) {
       rightSubRoot.left = leftSubRoot // move left sub tree down to the empty slot of rightSubRoot
       leftSubRoot.parent = rightSubRoot
       toDelete.left = null
@@ -162,7 +162,7 @@ class BinarySearchTrees {
     // an obvious candidate is the successor of toDelete (exercise 12.2-5)
     // we could have called successor() here, if it wasn't returning the key instead of the node
     def elected = rightSubRoot
-    while (elected.left != null) {
+    while (!nil(elected.left)) {
       elected = elected.left
     }
 

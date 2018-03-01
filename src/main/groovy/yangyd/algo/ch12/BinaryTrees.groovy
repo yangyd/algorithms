@@ -10,6 +10,16 @@ import java.util.function.BiConsumer
  */
 class BinaryTrees {
 
+  static void print(BinaryTreeNode<?> root) {
+    preOrderWalk(root, {
+      node, depth -> println(node)
+    })
+  }
+
+  static boolean nil(BinaryTreeNode<?> node) {
+    node == null || node.key == null
+  }
+
   /**
    * find the sibling of a node in an binary tree
    * @param node
@@ -157,7 +167,7 @@ class BinaryTrees {
   static int depth(BinaryTreeNode<?> root) {
     final counter = new AtomicInteger(0)
     postOrderWalk(root, { n, d ->
-      if (n != null && n.key != null && d > counter.get()) { // don't count RB tree sentinel
+      if (!nil(n) && d > counter.get()) { // don't count RB tree sentinel
         counter.set(d)
       }
     })
@@ -166,19 +176,19 @@ class BinaryTrees {
 
   static <T> List<T> collectInOrder(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    inOrderWalk(root, { node, depth -> if (node.key != null) list.add(node.key) })
+    inOrderWalk(root, { node, depth -> if (!nil(node)) list.add(node.key) })
     Collections.unmodifiableList(list)
   }
 
   static <T> List<T> collectPreOrder(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    preOrderWalk(root, { node, depth -> if (node.key != null) list.add(node.key) })
+    preOrderWalk(root, { node, depth -> if (!nil(node)) list.add(node.key) })
     Collections.unmodifiableList(list)
   }
 
   static <T> List<T> collectPostOrder(BinaryTreeNode<T> root) {
     def list = new LinkedList<T>()
-    postOrderWalk(root, { node, depth -> if (node.key != null) list.add(node.key) })
+    postOrderWalk(root, { node, depth -> if (!nil(node)) list.add(node.key) })
     Collections.unmodifiableList(list)
   }
 

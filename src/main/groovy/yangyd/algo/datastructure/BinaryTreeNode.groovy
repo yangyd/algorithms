@@ -43,6 +43,6 @@ class BinaryTreeNode<T> {
 
   @Override
   String toString() {
-    "Node[$key]" + (color == null ? "" : "($color)")
+    "Node[$key]" + (color == null ? "" : "($color)") + "<${this.left?.key}, ${this.right?.key}>"
   }
 }

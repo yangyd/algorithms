@@ -34,6 +34,16 @@ class RedBlackTree<T> {
     root == null ? Collections.emptyList() : BinarySearchTrees.collectSorted(root)
   }
 
+  void print() {
+    if (root != null) {
+      BinaryTrees.preOrderWalk(root, {
+        node, depth -> if (!BinaryTrees.nil(node)) {
+          println(node)
+        }
+      })
+    }
+  }
+
   private void fixAfterInsert(BinaryTreeNode<T> node) {
     while (true) {
       if (node == root && node.color == red) {
