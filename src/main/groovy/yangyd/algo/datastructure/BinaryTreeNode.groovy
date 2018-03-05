@@ -11,6 +11,17 @@ class BinaryTreeNode<T> {
     this.key = key
   }
 
+  static boolean nil(BinaryTreeNode<?> node) {
+    node == null || node.key == null
+  }
+
+  void copyFrom(BinaryTreeNode<T> other) {
+    if (other == null) {
+      throw new IllegalArgumentException("can't copy from null node")
+    }
+    key = other.key
+  }
+
   /**
    * Create a new left child with the given key. Will fail if the node already has a left child.
    * @param childKey

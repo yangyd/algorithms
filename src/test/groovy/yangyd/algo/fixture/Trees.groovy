@@ -2,8 +2,23 @@ package yangyd.algo.fixture
 
 import yangyd.algo.datastructure.BinaryTreeNode
 
+import java.security.SecureRandom
+
 class Trees {
   static final sample_bst = figure_12_2()
+
+
+  static List<Integer> randomList(int n) {
+    SecureRandom random = new SecureRandom()
+    if (n < 10 || n > 99) {
+      n = random.nextInt(89) + 10
+    }
+    Set<Integer> set = new HashSet<>()
+    while (set.size() < n) {
+      set.add(random.nextInt(100))
+    }
+    return set.toList()
+  }
 
   private static BinaryTreeNode<Integer> figure_12_2() {
     def n15 = new BinaryTreeNode(15)

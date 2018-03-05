@@ -4,6 +4,8 @@ import yangyd.algo.datastructure.BinaryTreeNode
 
 import static yangyd.algo.ch12.BinaryTrees.*
 
+import static yangyd.algo.datastructure.BinaryTreeNode.nil
+
 /**
  * This class contains operations on a Binary Search Tree.
  * for simplicity, assuming the parameter {@code root} for each method is always not null
@@ -90,10 +92,15 @@ class BinarySearchTrees {
   }
 
   static <T extends Comparable<T>> BinaryTreeNode<T> insert(BinaryTreeNode<T> root, T key) {
+    if (key == null) {
+      throw new IllegalArgumentException("Null key is not allowed")
+    }
+
     def node = root
     def parent = null
     def left = false
-    while (node != null && node.key != null) { // don't be confused by the Red-Black tree sentinel node, which has null key
+    while (node != null && node.key != null) {
+      // don't be confused by the Red-Black tree sentinel node, which has null key
       def c = key <=> node.key
       if (c > 0) {
         parent = node
@@ -130,9 +137,9 @@ class BinarySearchTrees {
     final toDelete = findNode(root, key)
 
     if (nil(toDelete.left)) {
-      return replaceNode(root, toDelete, toDelete.right)
+      return replaceSubTree(root, toDelete, toDelete.right)
     } else if (nil(toDelete.right)) {
-      return replaceNode(root, toDelete, toDelete.left)
+      return replaceSubTree(root, toDelete, toDelete.left)
     } else {
       deleteWithTwoChildren(root, toDelete)
     }
@@ -156,7 +163,7 @@ class BinarySearchTrees {
       rightSubRoot.left = leftSubRoot // move left sub tree down to the empty slot of rightSubRoot
       leftSubRoot.parent = rightSubRoot
       toDelete.left = null
-      return replaceNode(root, toDelete, rightSubRoot)
+      return replaceSubTree(root, toDelete, rightSubRoot)
     }
 
     // an obvious candidate is the successor of toDelete (exercise 12.2-5)
@@ -167,7 +174,7 @@ class BinarySearchTrees {
     }
 
     // now detach the elected replacement from the tree, replace it with its right sub-tree
-    replaceNode(root, elected, elected.right) // root will not change here
+    replaceSubTree(root, elected, elected.right) // root will not change here
 
     // now the elected node is clean of children.
     // make it the parent of original leftSubRoot and rightSubRoot
@@ -179,7 +186,7 @@ class BinarySearchTrees {
     toDelete.right = null
 
     // finally, delete the toDelete node and replace it with elected replacement
-    return replaceNode(root, toDelete, elected)
+    return replaceSubTree(root, toDelete, elected)
   }
 
 

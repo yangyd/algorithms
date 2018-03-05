@@ -5,20 +5,12 @@ import yangyd.algo.datastructure.BinaryTreeNode
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.BiConsumer
 
+import static yangyd.algo.datastructure.BinaryTreeNode.nil
+
 /**
  * This class contains general operations on a Binary Tree.
  */
 class BinaryTrees {
-
-  static void print(BinaryTreeNode<?> root) {
-    preOrderWalk(root, {
-      node, depth -> println(node)
-    })
-  }
-
-  static boolean nil(BinaryTreeNode<?> node) {
-    node == null || node.key == null
-  }
 
   /**
    * find the sibling of a node in an binary tree
@@ -64,7 +56,6 @@ class BinaryTrees {
     return x
   }
 
-
   /**
    * Left rotation operations on a binary tree. (Figure 13.2)
    * @param subRoot the sub-tree root on which the rotation is performed
@@ -93,7 +84,7 @@ class BinaryTrees {
 
   private static void fixRotate(BinaryTreeNode<?> parent, BinaryTreeNode<?> subRoot, BinaryTreeNode<?> newSubRoot) {
     newSubRoot.parent = parent
-    if (parent != null) {
+    if (!nil(parent)) { // don't set if parent is RB tree sentinel
       if (parent.left == subRoot) {
         parent.left = newSubRoot
       } else if (parent.right == subRoot) {
@@ -117,9 +108,9 @@ class BinaryTrees {
    *
    * @return the new root of the tree. it may be nothing if the only node (which is root) in the tree is deleted.
    */
-  static <T> Optional<BinaryTreeNode<T>> replaceNode(BinaryTreeNode<T> root,
-                                                             BinaryTreeNode<T> toDelete,
-                                                             BinaryTreeNode<T> replacement)
+  static <T> Optional<BinaryTreeNode<T>> replaceSubTree(BinaryTreeNode<T> root,
+                                                        BinaryTreeNode<T> toDelete,
+                                                        BinaryTreeNode<T> replacement)
   {
     if (root == null || toDelete == null) {
       throw new IllegalArgumentException("root and toDelete may not be null")
@@ -133,7 +124,7 @@ class BinaryTrees {
       }
       return Optional.ofNullable(replacement)
     } else {
-      replaceSubTree(toDelete, replacement)
+      replaceSubTree0(toDelete, replacement)
       return Optional.of(root)
     }
   }
@@ -144,7 +135,7 @@ class BinaryTrees {
    * if {@code newNode} is null, the sub tree is removed.
    * do nothing if the {@code oldNode} is not a <i>sub tree</i> root.
    */
-  private static void replaceSubTree(final BinaryTreeNode<?> oldNode, final BinaryTreeNode<?> newNode) {
+  private static void replaceSubTree0(final BinaryTreeNode<?> oldNode, final BinaryTreeNode<?> newNode) {
     if (oldNode == null || oldNode.parent == null) {
       return
     }
@@ -159,7 +150,7 @@ class BinaryTrees {
     }
 
     oldNode.parent = null
-    if (newNode != null) {
+    if (!nil(newNode)) { // in case of RB tree sentinel node, don't modify the parent
       newNode.parent = parent
     }
   }

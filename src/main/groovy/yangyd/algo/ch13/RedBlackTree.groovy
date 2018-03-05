@@ -6,25 +6,13 @@ import yangyd.algo.datastructure.BinaryTreeNode
 
 import java.util.concurrent.atomic.AtomicReference
 
+import static yangyd.algo.datastructure.BinaryTreeNode.nil
 import static yangyd.algo.datastructure.RedBlack.black
 import static yangyd.algo.datastructure.RedBlack.red
 
 class RedBlackTree<T> {
   private BinaryTreeNode<T> root
   private final BinaryTreeNode<T> sentinel = blackNode(null)// common leaf of all nodes
-
-  void insert(T key) {
-    if (root == null) {
-      root = blackNode(key)
-      root.parent = root.left = root.right = sentinel
-    } else {
-      def node = BinarySearchTrees.insert(root, key)
-      node.left = sentinel
-      node.right = sentinel
-      node.color = red
-      fixAfterInsert(node)
-    }
-  }
 
   int height() {
     root == null ? 0 : BinaryTrees.depth(root)
@@ -37,10 +25,149 @@ class RedBlackTree<T> {
   void print() {
     if (root != null) {
       BinaryTrees.preOrderWalk(root, {
-        node, depth -> if (!BinaryTrees.nil(node)) {
+        node, depth -> if (!nil(node)) {
           println(node)
         }
       })
+    }
+  }
+
+  void insert(T key) {
+    if (key == null) {
+      throw new IllegalArgumentException("Null key is not allowed")
+    }
+
+    if (root == null) {
+      root = blackNode(key)
+      root.parent = root.left = root.right = sentinel
+    } else {
+      def node = BinarySearchTrees.insert(root, key)
+      node.left = sentinel
+      node.right = sentinel
+      node.color = red
+      fixAfterInsert(node)
+    }
+  }
+
+  void delete(T key) {
+    if (root == null) {
+      throw new NoSuchElementException(String.valueOf(key))
+    }
+    final o = BinarySearchTrees.search(root, key)
+    if (!o.present) {
+      throw new NoSuchElementException(String.valueOf(key))
+    }
+    deleteByCase(o.get())
+  }
+
+  private void deleteByCase(BinaryTreeNode<T> node) {
+    // An improved deletion procedure utilizing BinaryTreeNode.copyFrom().
+    // It is simpler than what's implemented in BinarySearchTrees.delete().
+
+    final noleft = nil(node.left)
+    final noright = nil(node.right)
+
+    if (noleft && noright) {
+      if (node == root) { // the only node
+        root = null
+        sentinel.left = sentinel.right = sentinel.parent = null // paranoia
+      } else {
+        delete0(node) // deleting a dangling node is surprisingly the most complex case
+      }
+
+    } else if (noleft) {
+      checkDelete1(node, node.right)
+      final c = deleteWithOnlyRightChild(node)
+      c.color = black // we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
+
+    } else if (noright) {
+      checkDelete1(node, node.left)
+      final c = deleteWithOnlyLeftChild(node)
+      c.color = black
+
+    } else {
+      // to delete node with two children, we find its successor which has at most 1 child
+      final elected = successor(node)
+      node.copyFrom(elected) // copy its content to node
+      deleteByCase(elected) // now simply delete the successor
+    }
+  }
+
+  private static void checkDelete1(BinaryTreeNode<?> toDelete, BinaryTreeNode<?> child) {
+    if (toDelete.color != black) {
+      throw new AssertionError("Violation: red node can not has just one non-sentinel child")
+    }
+    if (child.color != red) {
+      throw new AssertionError("Violation: if a black node has exactly one non-sentinel black child, it must be red")
+    }
+  }
+
+  private BinaryTreeNode<T> deleteWithOnlyLeftChild(BinaryTreeNode<T> toDelete) {
+    final l = toDelete.left
+    final p = toDelete.parent
+    if (toDelete == root) {
+      root = l
+    } else {
+      p.left = l
+    }
+    l.parent = p // p is sentinel in case of root
+    toDelete.parent = null
+    toDelete.left = null
+    return l
+  }
+
+  private BinaryTreeNode<T> deleteWithOnlyRightChild(BinaryTreeNode<T> toDelete) {
+    final r = toDelete.right
+    final p = toDelete.parent
+    if (toDelete == root) {
+      root = r
+    } else {
+      p.right = r
+    }
+    r.parent = p
+    toDelete.parent = null
+    toDelete.right = null
+    return r
+  }
+
+  /**
+   * simplified procedure of finding successor for deletion
+   */
+  private static BinaryTreeNode<T> successor(BinaryTreeNode<T> node) {
+    def pp = null
+    def p = node.right
+    while (p != null) {
+      pp = p
+      p = p.left
+    }
+    pp
+  }
+
+  private void delete0(BinaryTreeNode<T> node) {
+    // node is not root
+    final p = node.parent
+    if (p.left == node) {
+      final s = p.right // sibling of node, must be either dangling or red
+      node.parent = null
+      p.left = sentinel
+
+      if (s.color == red) {
+        BinaryTrees.leftRotate(p)
+        // now s is in p's old place
+        // case 4
+      } else {
+        // s is dangling
+        // case 3
+      }
+
+
+
+    } else if (p.right == node) {
+      final s = p.left
+
+
+    } else {
+      throw new IllegalStateException("broken tree structure") // impossible
     }
   }
 
@@ -127,13 +254,43 @@ class RedBlackTree<T> {
     }
   }
 
+  void checkRoot() {
+    if (root != null && root.color != black) {
+      throw new IllegalStateException("Violation: root node is black")
+    }
+  }
+
+  void checkBlackHeight() {
+    Set<Integer> bhs = new HashSet<>()
+    BinaryTrees.postOrderWalk(root, {
+      node, depth ->
+        if (node == sentinel) {
+          bhs.add(blackDepth(node.parent) + 1) // include the sentinel node as leaf
+        }
+    })
+    if (bhs.size() != 1) {
+      throw new IllegalStateException("Violation: Every path must contain the same number of black nodes")
+    }
+  }
+
+  private static int blackDepth(BinaryTreeNode<?> node) {
+    int count = 0
+    while (!nil(node)) { // don't count the sentinel as root's parent
+      if (node.color == black) {
+        count += 1
+      }
+      node = node.parent
+    }
+    return count
+  }
+
   /**
    * Check if this property holds for all nodes:
    *   4. If a node is red, then both its children are black. (Section 13.1) Or, red node always has black parent
    *
    * @return one node that violates this property, or null if all nodes are good. If multiple nodes violate, only one of them is returned.
    */
-  BinaryTreeNode<T> checkRedBlack() {
+  void checkRedBlack() {
     def violation = new AtomicReference<BinaryTreeNode<T>>()
     BinaryTrees.postOrderWalk(root, { node, depth ->
       if (node.color == red) {
@@ -144,11 +301,8 @@ class RedBlackTree<T> {
         }
       }
     })
-
     if (violation.get() != null) {
-      return violation.get()
-    } else {
-      return null
+      throw new IllegalStateException("Violation: red node can't have red parent")
     }
   }
 
