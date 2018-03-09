@@ -10,7 +10,7 @@ import static yangyd.algo.datastructure.BinaryTreeNode.nil
 import static yangyd.algo.datastructure.RedBlack.black
 import static yangyd.algo.datastructure.RedBlack.red
 
-class RedBlackTree<T> {
+class RedBlackTree<T extends Comparable<T>> {
   private BinaryTreeNode<T> root
   private final BinaryTreeNode<T> sentinel = blackNode(null)// common leaf of all nodes
 
@@ -25,9 +25,10 @@ class RedBlackTree<T> {
   void print() {
     if (root != null) {
       BinaryTrees.preOrderWalk(root, {
-        node, depth -> if (!nil(node)) {
-          println(node)
-        }
+        node, depth ->
+          if (!nil(node)) {
+            println(node)
+          }
       })
     }
   }
@@ -45,7 +46,7 @@ class RedBlackTree<T> {
       node.left = sentinel
       node.right = sentinel
       node.color = red
-      fixAfterInsert(node)
+      insertionFix(node)
     }
   }
 
@@ -78,7 +79,8 @@ class RedBlackTree<T> {
     } else if (noleft) {
       checkDelete1(node, node.right)
       final c = deleteWithOnlyRightChild(node)
-      c.color = black // we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
+      c.color = black
+      // we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
 
     } else if (noright) {
       checkDelete1(node, node.left)
@@ -144,34 +146,110 @@ class RedBlackTree<T> {
   }
 
   private void delete0(BinaryTreeNode<T> node) {
+    // node is a black node with two sentinel children
     // node is not root
+
     final p = node.parent
+    node.parent = null
+
     if (p.left == node) {
-      final s = p.right // sibling of node, must be either dangling or red
-      node.parent = null
       p.left = sentinel
-
-      if (s.color == red) {
-        BinaryTrees.leftRotate(p)
-        // now s is in p's old place
-        // case 4
-      } else {
-        // s is dangling
-        // case 3
-      }
-
-
-
+      deletionFix()
     } else if (p.right == node) {
-      final s = p.left
-
+      p.right
 
     } else {
       throw new IllegalStateException("broken tree structure") // impossible
     }
   }
 
-  private void fixAfterInsert(BinaryTreeNode<T> node) {
+  /**
+   * rebalance the RB tree after the black depth of the sub-tree rooted at n is reduced by 1.
+   * Its possible of n being a leaf sentinel.
+   * @param n
+   * @param p parent of n. its necessary because n may be sentinel that doesn't has a parent pointer
+   */
+  private void deletionFix(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p) {
+    if (n == root) {
+      return // if we are at root, the tree is balanced
+    }
+
+    final s = p.left == n ? p.right : p.left
+    if (s == sentinel) {
+      throw new IllegalStateException("bad RB tree shape (found sentinel sibling when trying to re-balance)")
+    }
+
+    if (s.color == red) { // s is red (thus p is black), case 2
+      deletionFixCase2(n, p, s)
+    } else { // s is black, case 3~6
+      // is it safe to turn s red to match the black depth of its sibling (which is 1 less)?
+      if (s.left.color == black && s.right.color == black) { // yes
+        deletionFixCase3Case4(p, s) // may involve recursive call
+      } else { // at least one child is red
+        deletionFixCase5Case6(n, p, s)
+      }
+    }
+  }
+
+  private void deletionFixCase2(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+    // s is red, thus p must be black
+
+    // rotate towards n's side to make s occupy p's old place
+    if (p.left == n) {
+      BinaryTrees.leftRotate(p)
+    } else {
+      BinaryTrees.rightRotate(p)
+    }
+    s.color = black // s is in p's old place now, and we keep it black for this place,
+    p.color = red // and paint p red, so it converts to case 4~6
+    deletionFix(n, p) // after rotation, n is still child of p
+  }
+
+  private void deletionFixCase3Case4(final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+    // s's both children are black, which means we can make s red
+    s.color = red
+
+    if (p.color == black) { // case 3
+      deletionFix(p, p.parent) // descendant of p is balanced but has 1 less black depth now, so go up and repeat the process
+    } else { // p is red, case 4
+      p.color = black // balanced, we are done
+    }
+  }
+
+  private static void deletionFixCase5Case6(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+    // s is black, and at least one of its children is red
+    // case 5: n's different-side nephew is black (that is, s.right if n is left child, s.left if n is right child)
+    // case 6: n's different-side nephew is red
+    // if not in case 6, convert to case 6 and do the re balance there
+    if (p.left == n && s.right.color == black) {
+      final sl = BinaryTrees.rightRotate(s)
+      sl.color = black
+      s.color = red
+      deletionFixCase6(n, p, sl)
+    } else if (p.right == n && s.left.color == black) {
+      final sr = BinaryTrees.leftRotate(s)
+      sr.color = black
+      s.color = red
+      deletionFixCase6(n, p, sr)
+    } else { // we are already in case 6
+      deletionFixCase6(n, p, s)
+    }
+  }
+
+  private static void deletionFixCase6(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+    if (p.left == n) {
+      BinaryTrees.leftRotate(p)
+      s.right.color = black // it was red
+    } else {
+      BinaryTrees.rightRotate(p)
+      s.left.color = black
+    }
+    s.color = p.color // now s is at where p was, we keep same color at this position,
+    p.color = black // while making p black to even the black depth
+    // done, balanced
+  }
+
+  private void insertionFix(BinaryTreeNode<T> node) {
     while (true) {
       if (node == root && node.color == red) {
         node.color = black // simply make it black
@@ -185,9 +263,9 @@ class RedBlackTree<T> {
         }
 
         if (node.parent == node.parent.parent.left) {
-          node = fix_internal(node, uncle.get(), LR.left)
+          node = insertionFixInternal(node, uncle.get(), LR.left)
         } else {
-          node = fix_internal(node, uncle.get(), LR.right)
+          node = insertionFixInternal(node, uncle.get(), LR.right)
         }
 
       } else {
@@ -196,7 +274,7 @@ class RedBlackTree<T> {
     }
   }
 
-  private BinaryTreeNode<T> fix_internal(final BinaryTreeNode<T> node, final BinaryTreeNode<T> uncle, LR side) {
+  private BinaryTreeNode<T> insertionFixInternal(final BinaryTreeNode<T> node, final BinaryTreeNode<T> uncle, LR side) {
     switch (uncle.color) {
       case red: // case 1 - parent and uncle are both red
         node.parent.color = black
@@ -207,17 +285,17 @@ class RedBlackTree<T> {
       case black: // case 2 or case 3 - uncle is black
         switch (side) {
           case LR.left:
-            return fix_LL(node, node.parent)
+            return insertionFixLL(node, node.parent)
           case LR.right:
-            return fix_RR(node, node.parent)
+            return insertionFixRR(node, node.parent)
         }
         break
     } // end switch uncle's color
     throw new AssertionError("should not reach here")
   }
 
-  private BinaryTreeNode<T> fix_LL(final BinaryTreeNode<T> node,
-                                   final BinaryTreeNode<T> parent) {
+  private BinaryTreeNode<T> insertionFixLL(final BinaryTreeNode<T> node,
+                                           final BinaryTreeNode<T> parent) {
     if (parent.right == node) { // case 2 - node is right child
       BinaryTrees.leftRotate(parent) // this actually transform into case 3
       // parent-child relationship is reversed after rotation
@@ -235,9 +313,9 @@ class RedBlackTree<T> {
     }
   }
 
-  private BinaryTreeNode<T> fix_RR(final BinaryTreeNode<T> node,
-                                   final BinaryTreeNode<T> parent) {
-    // The mirror image of fix_LL
+  private BinaryTreeNode<T> insertionFixRR(final BinaryTreeNode<T> node,
+                                           final BinaryTreeNode<T> parent) {
+    // The mirror image of insertionFixLL
     if (parent.left == node) {
       BinaryTrees.rightRotate(parent)
       return parent
