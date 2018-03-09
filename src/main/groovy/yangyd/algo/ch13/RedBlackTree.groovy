@@ -58,10 +58,10 @@ class RedBlackTree<T extends Comparable<T>> {
     if (!o.present) {
       throw new NoSuchElementException(String.valueOf(key))
     }
-    deleteByCase(o.get())
+    deleteByCases(o.get())
   }
 
-  private void deleteByCase(BinaryTreeNode<T> node) {
+  private void deleteByCases(BinaryTreeNode<T> node) {
     // An improved deletion procedure utilizing BinaryTreeNode.copyFrom().
     // It is simpler than what's implemented in BinarySearchTrees.delete().
 
@@ -73,11 +73,13 @@ class RedBlackTree<T extends Comparable<T>> {
         root = null
         sentinel.left = sentinel.right = sentinel.parent = null // paranoia
       } else {
-        delete0(node) // deleting a dangling node is surprisingly the most complex case
+        final parent = node.parent
+        delete0(node, parent) // deleting a dangling node is the only case where we need to re-balance
+        deletionFix(sentinel, parent) // node is replaced by a sentinel, start re-balance from here
       }
 
     } else if (noleft) {
-      checkDelete1(node, node.right)
+      checkDelete1(node, node.right) // we can assert here that node is black and its child is red
       final c = deleteWithOnlyRightChild(node)
       c.color = black
       // we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
@@ -91,7 +93,7 @@ class RedBlackTree<T extends Comparable<T>> {
       // to delete node with two children, we find its successor which has at most 1 child
       final elected = successor(node)
       node.copyFrom(elected) // copy its content to node
-      deleteByCase(elected) // now simply delete the successor
+      deleteByCases(elected) // now simply delete the successor
     }
   }
 
@@ -145,29 +147,24 @@ class RedBlackTree<T extends Comparable<T>> {
     pp
   }
 
-  private void delete0(BinaryTreeNode<T> node) {
+  private void delete0(BinaryTreeNode<T> node, BinaryTreeNode<T> parent) {
     // node is a black node with two sentinel children
     // node is not root
-
-    final p = node.parent
-    node.parent = null
-
-    if (p.left == node) {
-      p.left = sentinel
-      deletionFix()
-    } else if (p.right == node) {
-      p.right
-
+    if (parent.left == node) {
+      parent.left = sentinel
+    } else if (parent.right == node) {
+      parent.right = sentinel
     } else {
       throw new IllegalStateException("broken tree structure") // impossible
     }
+    node.parent = null
   }
 
   /**
    * rebalance the RB tree after the black depth of the sub-tree rooted at n is reduced by 1.
    * Its possible of n being a leaf sentinel.
    * @param n
-   * @param p parent of n. its necessary because n may be sentinel that doesn't has a parent pointer
+   * @param p parent of n. this is necessary because n may be sentinel that doesn't has a parent pointer
    */
   private void deletionFix(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p) {
     if (n == root) {
