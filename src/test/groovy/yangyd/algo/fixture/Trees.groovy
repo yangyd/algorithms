@@ -7,17 +7,37 @@ import java.security.SecureRandom
 class Trees {
   static final sample_bst = figure_12_2()
 
-
   static List<Integer> randomList(int n) {
     SecureRandom random = new SecureRandom()
-    if (n < 10 || n > 99) {
+    if (n < 5 || n > 99) {
       n = random.nextInt(89) + 10
     }
-    Set<Integer> set = new HashSet<>()
-    while (set.size() < n) {
-      set.add(random.nextInt(100))
+
+    int[] numbers = range(n)
+    for (int i = 0; i < n; i++) {
+      int j = random.nextInt(n)
+      swap(numbers, i, j)
     }
-    return set.toList()
+
+    List<Integer> list = new LinkedList<>()
+    for (int i = 0; i < n; i++) {
+      list.add(numbers[i])
+    }
+    list
+  }
+
+  private static void swap(int[] arr, int i, int j) {
+    int tmp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = tmp
+  }
+
+  private static int[] range(int n) {
+    int[] arr = new int[n]
+    for (int i = 0; i < n; i += 1) {
+      arr[i] = i + 1
+    }
+    return arr
   }
 
   private static BinaryTreeNode<Integer> figure_12_2() {

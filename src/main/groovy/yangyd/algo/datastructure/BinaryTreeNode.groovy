@@ -5,7 +5,15 @@ class BinaryTreeNode<T> {
   BinaryTreeNode<T> parent
   BinaryTreeNode<T> left
   BinaryTreeNode<T> right
-  RedBlack color
+  boolean black
+
+  void makeRed() {
+    black = false
+  }
+
+  void makeBlack() {
+    black = true
+  }
 
   BinaryTreeNode(T key) {
     this.key = key
@@ -54,6 +62,10 @@ class BinaryTreeNode<T> {
 
   @Override
   String toString() {
-    "Node[$key]" + (color == null ? "" : "($color)") + "<${this.left?.key}, ${this.right?.key}>"
+    if (key == null) {
+      "Node[Sentinel]"
+    } else {
+      "Node[$key]" + (black ? "(black)" : "()") + "<${this.left?.key}, ${this.right?.key}>"
+    }
   }
 }

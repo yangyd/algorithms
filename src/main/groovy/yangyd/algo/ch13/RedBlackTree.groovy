@@ -7,8 +7,6 @@ import yangyd.algo.datastructure.BinaryTreeNode
 import java.util.concurrent.atomic.AtomicReference
 
 import static yangyd.algo.datastructure.BinaryTreeNode.nil
-import static yangyd.algo.datastructure.RedBlack.black
-import static yangyd.algo.datastructure.RedBlack.red
 
 class RedBlackTree<T extends Comparable<T>> {
   private BinaryTreeNode<T> root
@@ -45,7 +43,7 @@ class RedBlackTree<T extends Comparable<T>> {
       def node = BinarySearchTrees.insert(root, key)
       node.left = sentinel
       node.right = sentinel
-      node.color = red
+      node.makeRed()
       insertionFix(node)
     }
   }
@@ -58,7 +56,12 @@ class RedBlackTree<T extends Comparable<T>> {
     if (!o.present) {
       throw new NoSuchElementException(String.valueOf(key))
     }
+//    def k = o.get().key
+//    println("----------------------------------------------")
+//    println("--> about to delete: ${o.get()}")
     deleteByCases(o.get())
+//    println("---------------- ${k} deleted -------------------")
+//    print()
   }
 
   private void deleteByCases(BinaryTreeNode<T> node) {
@@ -74,20 +77,23 @@ class RedBlackTree<T extends Comparable<T>> {
         sentinel.left = sentinel.right = sentinel.parent = null // paranoia
       } else {
         final parent = node.parent
-        delete0(node, parent) // deleting a dangling node is the only case where we need to re-balance
-        deletionFix(sentinel, parent) // node is replaced by a sentinel, start re-balance from here
+        delete0(node, parent)
+        if (node.black) { // deleting a dangling black node is the only case where we need to re-balance
+          deletionFix(sentinel, parent) // node is replaced by a sentinel, start re-balance from here
+        }
       }
 
     } else if (noleft) {
       checkDelete1(node, node.right) // we can assert here that node is black and its child is red
-      final c = deleteWithOnlyRightChild(node)
-      c.color = black
-      // we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
+      final child = node.right
+      deleteWithSingleChild(node, child)
+      child.makeBlack()// we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
 
     } else if (noright) {
       checkDelete1(node, node.left)
-      final c = deleteWithOnlyLeftChild(node)
-      c.color = black
+      final child = node.left
+      deleteWithSingleChild(node, child)
+      child.makeBlack()// we replaced a black node with its red child, so simply painting it black can preserve RB tree properties
 
     } else {
       // to delete node with two children, we find its successor which has at most 1 child
@@ -98,40 +104,28 @@ class RedBlackTree<T extends Comparable<T>> {
   }
 
   private static void checkDelete1(BinaryTreeNode<?> toDelete, BinaryTreeNode<?> child) {
-    if (toDelete.color != black) {
+    if (!toDelete.black) {
       throw new AssertionError("Violation: red node can not has just one non-sentinel child")
     }
-    if (child.color != red) {
+    if (child.black) {
       throw new AssertionError("Violation: if a black node has exactly one non-sentinel black child, it must be red")
     }
   }
 
-  private BinaryTreeNode<T> deleteWithOnlyLeftChild(BinaryTreeNode<T> toDelete) {
-    final l = toDelete.left
+  private void deleteWithSingleChild(BinaryTreeNode<T> toDelete, BinaryTreeNode<T> child) {
     final p = toDelete.parent
     if (toDelete == root) {
-      root = l
+      root = child
     } else {
-      p.left = l
+      if (p.left == toDelete) {
+        p.left = child
+      } else {
+        p.right = child
+      }
     }
-    l.parent = p // p is sentinel in case of root
-    toDelete.parent = null
-    toDelete.left = null
-    return l
-  }
-
-  private BinaryTreeNode<T> deleteWithOnlyRightChild(BinaryTreeNode<T> toDelete) {
-    final r = toDelete.right
-    final p = toDelete.parent
-    if (toDelete == root) {
-      root = r
-    } else {
-      p.right = r
-    }
-    r.parent = p
+    child.parent = p
     toDelete.parent = null
     toDelete.right = null
-    return r
   }
 
   /**
@@ -140,7 +134,7 @@ class RedBlackTree<T extends Comparable<T>> {
   private static BinaryTreeNode<T> successor(BinaryTreeNode<T> node) {
     def pp = null
     def p = node.right
-    while (p != null) {
+    while (!nil(p)) {
       pp = p
       p = p.left
     }
@@ -166,21 +160,21 @@ class RedBlackTree<T extends Comparable<T>> {
    * @param n
    * @param p parent of n. this is necessary because n may be sentinel that doesn't has a parent pointer
    */
-  private void deletionFix(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p) {
+  private void deletionFix(final BinaryTreeNode<T> n, final BinaryTreeNode<T> p) {
     if (n == root) {
       return // if we are at root, the tree is balanced
     }
 
     final s = p.left == n ? p.right : p.left
     if (s == sentinel) {
-      throw new IllegalStateException("bad RB tree shape (found sentinel sibling when trying to re-balance)")
+      throw new IllegalStateException("sibling of a deleted node should not be sentinel")
     }
 
-    if (s.color == red) { // s is red (thus p is black), case 2
+    if (!s.black) { // s is red (thus p is black), case 2
       deletionFixCase2(n, p, s)
     } else { // s is black, case 3~6
       // is it safe to turn s red to match the black depth of its sibling (which is 1 less)?
-      if (s.left.color == black && s.right.color == black) { // yes
+      if (s.left.black && s.right.black) { // yes
         deletionFixCase3Case4(p, s) // may involve recursive call
       } else { // at least one child is red
         deletionFixCase5Case6(n, p, s)
@@ -188,7 +182,7 @@ class RedBlackTree<T extends Comparable<T>> {
     }
   }
 
-  private void deletionFixCase2(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+  private void deletionFixCase2(final BinaryTreeNode<T> n, final BinaryTreeNode<T> p, final BinaryTreeNode<T> s) {
     // s is red, thus p must be black
 
     // rotate towards n's side to make s occupy p's old place
@@ -197,61 +191,68 @@ class RedBlackTree<T extends Comparable<T>> {
     } else {
       BinaryTrees.rightRotate(p)
     }
-    s.color = black // s is in p's old place now, and we keep it black for this place,
-    p.color = red // and paint p red, so it converts to case 4~6
+    if (root == p) { // in case we rotated at the root
+      root = s
+    }
+
+    s.makeBlack() // s is in p's old place now, and we keep it black for this place,
+    p.makeRed() // and paint p red, so it converts to case 4~6
     deletionFix(n, p) // after rotation, n is still child of p
   }
 
-  private void deletionFixCase3Case4(final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+  private void deletionFixCase3Case4(final BinaryTreeNode<T> p, final BinaryTreeNode<T> s) {
     // s's both children are black, which means we can make s red
-    s.color = red
+    s.makeRed()
 
-    if (p.color == black) { // case 3
+    if (p.black) { // case 3
       deletionFix(p, p.parent) // descendant of p is balanced but has 1 less black depth now, so go up and repeat the process
     } else { // p is red, case 4
-      p.color = black // balanced, we are done
+      p.makeBlack() // balanced, we are done
     }
   }
 
-  private static void deletionFixCase5Case6(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+  private void deletionFixCase5Case6(final BinaryTreeNode<T> n, final BinaryTreeNode<T> p, final BinaryTreeNode<T> s) {
     // s is black, and at least one of its children is red
     // case 5: n's different-side nephew is black (that is, s.right if n is left child, s.left if n is right child)
     // case 6: n's different-side nephew is red
     // if not in case 6, convert to case 6 and do the re balance there
-    if (p.left == n && s.right.color == black) {
+    if (p.left == n && s.right.black) {
       final sl = BinaryTrees.rightRotate(s)
-      sl.color = black
-      s.color = red
+      sl.makeBlack()
+      s.makeRed()
       deletionFixCase6(n, p, sl)
-    } else if (p.right == n && s.left.color == black) {
+    } else if (p.right == n && s.left.black) {
       final sr = BinaryTrees.leftRotate(s)
-      sr.color = black
-      s.color = red
+      sr.makeBlack()
+      s.makeRed()
       deletionFixCase6(n, p, sr)
     } else { // we are already in case 6
       deletionFixCase6(n, p, s)
     }
   }
 
-  private static void deletionFixCase6(final BinaryTreeNode<?> n, final BinaryTreeNode<?> p, final BinaryTreeNode<?> s) {
+  private void deletionFixCase6(final BinaryTreeNode<T> n, final BinaryTreeNode<T> p, final BinaryTreeNode<T> s) {
     if (p.left == n) {
       BinaryTrees.leftRotate(p)
-      s.right.color = black // it was red
+      s.right.makeBlack() // it was red
     } else {
       BinaryTrees.rightRotate(p)
-      s.left.color = black
+      s.left.makeBlack()
     }
-    s.color = p.color // now s is at where p was, we keep same color at this position,
-    p.color = black // while making p black to even the black depth
-    // done, balanced
+    if (root == p) {
+      root = s
+    }
+
+    s.black = p.black
+    p.makeBlack()
   }
 
   private void insertionFix(BinaryTreeNode<T> node) {
     while (true) {
-      if (node == root && node.color == red) {
-        node.color = black // simply make it black
+      if (node == root && !node.black) {
+        node.makeBlack() // simple make it black
 
-      } else if (node.parent.color == red) {
+      } else if (!node.parent.black) {
         // 'node' to be fixed is always red
         // and since parent is red, grand parent must exist
         def uncle = BinaryTrees.sibling(node.parent)
@@ -272,22 +273,19 @@ class RedBlackTree<T extends Comparable<T>> {
   }
 
   private BinaryTreeNode<T> insertionFixInternal(final BinaryTreeNode<T> node, final BinaryTreeNode<T> uncle, LR side) {
-    switch (uncle.color) {
-      case red: // case 1 - parent and uncle are both red
-        node.parent.color = black
-        uncle.color = black
-        node.parent.parent.color = red // it can be red now because both parent and uncle are black
-        return node.parent.parent // next loop
-
-      case black: // case 2 or case 3 - uncle is black
-        switch (side) {
-          case LR.left:
-            return insertionFixLL(node, node.parent)
-          case LR.right:
-            return insertionFixRR(node, node.parent)
-        }
-        break
-    } // end switch uncle's color
+    if (uncle.black) { // case 2 or case 3 - uncle is black
+      switch (side) {
+        case LR.left:
+          return insertionFixLL(node, node.parent)
+        case LR.right:
+          return insertionFixRR(node, node.parent)
+      }
+    } else { // case 1 - parent and uncle are both red
+      node.parent.makeBlack()
+      uncle.makeBlack()
+      node.parent.parent.makeRed() // it can be red now because both parent and uncle are black
+      return node.parent.parent // next loop
+    }
     throw new AssertionError("should not reach here")
   }
 
@@ -304,8 +302,8 @@ class RedBlackTree<T extends Comparable<T>> {
       if (pp == root) { // this rotation may modify the root of tree
         root = newPP
       }
-      pp.color = red // is now the child of parent
-      parent.color = black // now is the new sub root, and is still the parent of 'node'
+      pp.makeRed() // is now the child of parent
+      parent.makeBlack() // now is the new sub root, and is still the parent of 'node'
       return node // not creating any new violation, thus terminating the loop
     }
   }
@@ -323,19 +321,20 @@ class RedBlackTree<T extends Comparable<T>> {
       if (pp == root) {
         root = newPP
       }
-      pp.color = red
-      parent.color = black
+      pp.makeRed()
+      parent.makeBlack()
       return node
     }
   }
 
-  void checkRoot() {
-    if (root != null && root.color != black) {
+  boolean checkRoot() {
+    if (root != null && !root.black) {
       throw new IllegalStateException("Violation: root node is black")
     }
+    true
   }
 
-  void checkBlackHeight() {
+  boolean checkBlackHeight() {
     Set<Integer> bhs = new HashSet<>()
     BinaryTrees.postOrderWalk(root, {
       node, depth ->
@@ -346,12 +345,13 @@ class RedBlackTree<T extends Comparable<T>> {
     if (bhs.size() != 1) {
       throw new IllegalStateException("Violation: Every path must contain the same number of black nodes")
     }
+    true
   }
 
   private static int blackDepth(BinaryTreeNode<?> node) {
     int count = 0
     while (!nil(node)) { // don't count the sentinel as root's parent
-      if (node.color == black) {
+      if (node.black) {
         count += 1
       }
       node = node.parent
@@ -365,37 +365,34 @@ class RedBlackTree<T extends Comparable<T>> {
    *
    * @return one node that violates this property, or null if all nodes are good. If multiple nodes violate, only one of them is returned.
    */
-  void checkRedBlack() {
+  boolean checkRedBlack() {
     def violation = new AtomicReference<BinaryTreeNode<T>>()
     BinaryTrees.postOrderWalk(root, { node, depth ->
-      if (node.color == red) {
+      if (!node.black) {
         // we have null child pointer pointing to the sentinel, which is black
-        if (node.left.color == red || node.right.color == red) {
+        if (!(node.left.black && node.right.black)) {
           violation.set(node)
           throw new BinaryTrees.StopWalkException()
         }
+      }
+
+      if (node.key == null && !node.black) {
+        throw new IllegalStateException("Violation: sentinel node should be black")
       }
     })
     if (violation.get() != null) {
       throw new IllegalStateException("Violation: red node can't have red parent")
     }
+    true
   }
 
   private static BinaryTreeNode<T> blackNode(T key) {
     def node = new BinaryTreeNode(key)
-    node.color = black
+    node.makeBlack()
     node
   }
 
   private static enum LR {
     left, right
   }
-
-//  private static void flip(BinaryTreeNode<T> node) {
-//    if (node.color == red) {
-//      node.color = black
-//    } else if (node.color == black) {
-//      node.color = red
-//    }
-//  }
 }
