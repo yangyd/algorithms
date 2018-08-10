@@ -2,6 +2,52 @@ package yangyd.algo.ch9
 
 class QuickSort {
 
+  static void quicksort(List<Integer> list) {
+    _quickSort(list, 0, list.size() - 1)
+  }
+
+  static void _quickSort(List<Integer> list, int left, int right) {
+    println(list.subList(left, right + 1))
+    if (left < right) {
+      int pivot = partition(list, left, right)
+      // pivot could be == right, when pivot is the biggest element (which is at [right]), means no move is made
+      // in this case recursive will never make progress if we include pivot in left hand
+      _quickSort(list, left, pivot - 1)
+
+      // but if pivot == left, it means
+      //   1) left == right, will not incur further recursion
+      //   2) pivot happens to be the smallest element, it used to be at [right], but is now moved to [left]. next round things will change.
+      // so its safe to include pivot in the right side.
+
+      // but best is that we don't include pivot in either side.
+      _quickSort(list, pivot + 1, right)
+    }
+  }
+
+  static int partition(List<Integer> list, int left, int right) {
+    int pivot = list.get(right)
+    int i = left
+    int j = left
+
+    while (j < right) {
+      if (list.get(j) < pivot) {
+        swap(list, i, j)
+        i += 1
+      }
+      j += 1
+    }
+    swap(list, i, right)
+    return i
+  }
+
+  private static void swap(List<Integer> list, int a, int b) {
+    if (a != b) {
+      int tmp = list.get(a)
+      list.set(a, list.get(b))
+      list.set(b, tmp)
+    }
+  }
+
   /**
    * find out the minimum and maximum of the input
    * @param input
