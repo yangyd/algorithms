@@ -5,12 +5,15 @@ import yangyd.algo.fixture.Trees
 
 class Ch9_Spec extends Specification {
 
-  def "quicksort() should work"() {
-    expect:
+  def "quicksort() sort a list in-place"() {
+    when:
     List<Integer> sample = Trees.randomList(30)
-    println(sample)
+    List<Integer> compare = new ArrayList<>(sample)
     QuickSort.quicksort(sample)
-    println(sample)
+    Collections.sort(compare)
+
+    then:
+    sample == compare
   }
 
   def "minmax() finds out min and max"() {

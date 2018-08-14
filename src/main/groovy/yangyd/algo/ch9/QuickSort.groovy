@@ -7,7 +7,7 @@ class QuickSort {
   }
 
   static void _quickSort(List<Integer> list, int left, int right) {
-    println(list.subList(left, right + 1))
+//    println(list.subList(left, right + 1))
     if (left < right) {
       int pivot = partition(list, left, right)
       // pivot could be == right, when pivot is the biggest element (which is at [right]), means no move is made
