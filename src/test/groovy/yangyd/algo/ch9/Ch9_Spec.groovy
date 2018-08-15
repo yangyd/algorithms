@@ -9,7 +9,7 @@ class Ch9_Spec extends Specification {
 
   def "insertSort should work"() {
     when:
-    List<Double> sample = Trees.randomList(10)
+    List<Double> sample = Trees.randomList(30)
     List<Double> compare = new ArrayList<>(sample)
     Collections.sort(compare)
     QuickSort.insertSort(sample)

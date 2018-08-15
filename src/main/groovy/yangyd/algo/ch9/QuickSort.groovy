@@ -3,8 +3,31 @@ package yangyd.algo.ch9
 class QuickSort {
 
   static void insertSort(List<Double> list) {
-    int sortedSize = 1
-    int totalSize = list.size()
+    int sortedTo = 0
+    int length = list.size()
+
+    while (true) {
+      int next = sortedTo + 1
+      double nextVal = list.get(next)
+
+      int i = 0
+      while (true) {
+        if (list.get(i) < nextVal) {
+          i += 1
+          if (i > sortedTo) { // nextVal already in correct place
+            break
+          }
+        } else {
+          moveForward(list, i, next)
+          break
+        }
+      }
+
+      sortedTo += 1
+      if (sortedTo == length - 1) {
+        return
+      }
+    }
   }
 
   private static void moveForward(List<Double> list, int to, int from) {
