@@ -8,14 +8,21 @@ import java.util.stream.Collectors
 class Ch9_Spec extends Specification {
 
   def "insertSort should work"() {
-    when:
-    List<Double> sample = Trees.randomList(30)
+    expect:
+    List<Double> sample = Trees.randomList(n)
     List<Double> compare = new ArrayList<>(sample)
     Collections.sort(compare)
     QuickSort.insertSort(sample)
-
-    then:
     sample == compare
+
+    where:
+    n | _
+    0 | _
+    1 | _
+    2 | _
+    3 | _
+    12 | _
+    30 | _
   }
 
   def "randomSelect returns the n-th smallest element in the list"() {
@@ -30,14 +37,21 @@ class Ch9_Spec extends Specification {
   }
 
   def "quicksort() sort a list in-place"() {
-    when:
-    List<Double> sample = Trees.randomList(30)
+    expect:
+    List<Double> sample = Trees.randomList(n)
     List<Double> compare = new ArrayList<>(sample)
-    QuickSort.quicksort(sample)
     Collections.sort(compare)
-
-    then:
+    QuickSort.quicksort(sample)
     sample == compare
+
+    where:
+    n | _
+    0 | _
+    1 | _
+    2 | _
+    3 | _
+    12 | _
+    30 | _
   }
 
   def "minmax() finds out min and max"() {
