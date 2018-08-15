@@ -2,17 +2,71 @@ package yangyd.algo.ch9
 
 class QuickSort {
 
-  static void quicksort(List<Integer> list) {
-    _quickSort(list, 0, list.size() - 1)
+  static void insertSort(List<Double> list) {
+    int sortedSize = 1
+    int totalSize = list.size()
   }
 
-  static void _quickSort(List<Integer> list, int left, int right) {
+  private static void moveForward(List<Double> list, int to, int from) {
+    if (to >= from) {
+      return
+    }
+    double value = list.get(from)
+    int i = from
+    while (i > to) {
+      list.set(i, list.get(i - 1))
+      i -= 1
+    }
+    list.set(to, value)
+  }
+
+  /**
+   * Return the n-th smallest element in the list. The list will be rearranged during the course
+   * @param order
+   * @param list
+   * @return
+   */
+  static int randomSelect(int order, List<Double> list) {
+    return rselect(order, list, 0, list.size() - 1)
+  }
+
+  private static int rselect(int order, List<Double> list, int left, int right) {
+    if (left > right) {
+      throw new RuntimeException("you screwed up")
+    } else if (left == right) {
+      return list.get(left)
+    }
+    int pivot = partition(list, left, right)
+
+    int leftSize = pivot - left
+    int desiredLeftSize = order - 1
+
+    if (leftSize > desiredLeftSize) {
+      // search left
+      return rselect(order, list, left, pivot - 1)
+
+    } else if (leftSize < desiredLeftSize) {
+      // search right
+      int newOrder = order - leftSize - 1
+      return rselect(newOrder, list, pivot + 1, right)
+
+    } else {
+      return list.get(pivot)
+    }
+  }
+
+
+  static void quicksort(List<Double> list) {
+    qsort(list, 0, list.size() - 1)
+  }
+
+  private static void qsort(List<Double> list, int left, int right) {
 //    println(list.subList(left, right + 1))
     if (left < right) {
       int pivot = partition(list, left, right)
       // pivot could be == right, when pivot is the biggest element (which is at [right]), means no move is made
       // in this case recursive will never make progress if we include pivot in left hand
-      _quickSort(list, left, pivot - 1)
+      qsort(list, left, pivot - 1)
 
       // but if pivot == left, it means
       //   1) left == right, will not incur further recursion
@@ -20,12 +74,12 @@ class QuickSort {
       // so its safe to include pivot in the right side.
 
       // but best is that we don't include pivot in either side.
-      _quickSort(list, pivot + 1, right)
+      qsort(list, pivot + 1, right)
     }
   }
 
-  static int partition(List<Integer> list, int left, int right) {
-    int pivot = list.get(right)
+  static int partition(List<Double> list, int left, int right) {
+    double pivot = list.get(right)
     int i = left
     int j = left
 
@@ -40,9 +94,9 @@ class QuickSort {
     return i
   }
 
-  private static void swap(List<Integer> list, int a, int b) {
+  private static void swap(List<Double> list, int a, int b) {
     if (a != b) {
-      int tmp = list.get(a)
+      double tmp = list.get(a)
       list.set(a, list.get(b))
       list.set(b, tmp)
     }
@@ -53,7 +107,7 @@ class QuickSort {
    * @param input
    * @return a tuple of (min, max)
    */
-  static int[] minmax(List<Integer> input) {
+  static int[] minmax(List<Double> input) {
     final len = input.size()
     if (len < 2) {
       throw new IllegalArgumentException("input should have at lease 2 elements")
